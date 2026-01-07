@@ -30,9 +30,9 @@ function addUserMessage(text) {
     chatWindow.append(messageRow);
 }
 
-async function addBotMessage(text) {
-    const profileDiv = await createEl('div', 'profile-image', 'AI');
-    const messageRow = await createEl('div', 'message-row bot');
+function addBotMessage(text) {
+    const profileDiv = createEl('div', 'profile-image', 'AI');
+    const messageRow = createEl('div', 'message-row bot');
     const bubbleGroup = createEl('div', 'bubble-group');
     const bubble = createEl('div', 'bubble', text);
     const timestamp = createEl('span', 'timestamp', getCurrentTime());
@@ -43,41 +43,62 @@ async function addBotMessage(text) {
     chatWindow.append(messageRow);
 }
 
-// Enter 키 이벤트 리스너
-// if (userInput) {
-//     userInput.addEventListener('keypress', (event) => {
-//         if (event.key === 'Enter') {
-//             event.preventDefault(); // 줄바꿈 방지
-//             handleSendChat(); // 채팅 전송 함수
-//         }
-//     });
-//     console.log('Enter 키 이벤트 리스너 등록 완료');
-// } else {
-//     console.error('입력창을 찾을 수 없습니다!');
-// }
+// 인디케이터 보여주기(응답중 메시지 시작)
+const showTipingIndicator = () => {
+    // html 태그 js에 표기
+    const indicator = document.createElement('div');
+    indicator.id = 'typing-indicator';
+    indicator.className = 'typing-indicator';
+    indicator.innerHTML = `<span></span><span></span><span></span>`;
+    // indicator 표기(appendChild)
+    chatWindow.appendChild(indicator);
+    chatWindow.scrollTop = chatWindow.scrollHeight; // 스크롤 하단 이동
+};
 
-function handleSend() {
-    const message = userInput.value;
+// 인디케이터 제거하기(응답완료)
+const removeTypingIndicator = () => {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) indicator.remove();
+};
 
-    if (message.length == 0) return;
+const handleSend = async () => {
+    try {
+        let url = "https://jsonplaceholder.typicode.com/todos/1"; // 백엔드 연동 후 설정
+        const message = userInput.value.trim(); // 겅벡제거
+    
+        if (message.length == 0) return;
+    
+        console.log(message);
+    
+        // 유저 질문 말풍선
+        addUserMessage(message);
+        
+        // 입력창 비우기
+        userInput.value = ''; 
 
-    console.log(message);
+        console.log("인디케이터 표기");
+        showTipingIndicator(); //todo: typing indicator 삽입
+        
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 강제 대기
 
-    // 유저 질문 말풍선
-    addUserMessage(message);
+        const botResponse = await sendMessage(url, message);
+        console.log(botResponse);
 
-    // 봇 응답 말풍선
-    // sendMessage(message);
-
-    addBotMessage(sendMessage(message));
-
-    // 입력창 비우기
-    userInput.value = ''; 
+        removeTypingIndicator(); // todo: typing indicatior 제거
+        
+        // 테스트 api
+        const title = botResponse.title;
+        addBotMessage(title);
+    
+    } catch (error) {
+        console.error(`오류 발생: ${error}`);
+        addBotMessage("오류 발생했습니다.");
+    }
 }
 
 sendButton.addEventListener('click', handleSend);
 userInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
+  if (e.key === 'Enter' && !e.isComposing) { // 한글 중복 입력 방지
     handleSend();
   }
 });
