@@ -226,11 +226,11 @@ const showTipingIndicator = () => {
 ### 전체 동작 흐름
 1. 클라이언트는 { userId, text } 형태의 JSON을 `/chat` 엔드포인트로 전송
 
-2. server.js는 해당 요청을 Chatbot API가 요구하는 포맷(payload)으로 변환하여 외부 Chatbot API 호출
+2. server.js는 클라이언트의 요청을 payload로 가공해 chatbot 함수 호출
 
-3. api.js는 Secret Key를 이용해 요청 서명(Signature)을 생성한 뒤, Chatbot API를 호출하고, 챗봇 응답을 반환
+3. api.js는 요청 서명을 생성해 외부 Chatbot API를 호출하고 응답 반환
 
-4. server.js는 응답을 파싱하여 챗봇이 생성한 텍스트만 추출한 후 클라이언트에 전달
+4. server.js는 반환된 응답을 파싱하여 챗봇이 생성한 텍스트만 추출한 후 클라이언트에 전달
 
 
 <br>
