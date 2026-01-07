@@ -283,7 +283,7 @@ app.post('/chat', async(request, response) => {
             "event": "send"
         };
     
-        // 3. 외부 API(chatbot) 호출
+        // 3. chatbot 함수 호출
         const raw = await chatbot(payload);
         
         // 4. 문자열(JSON) 응답을 JS 객체로 변환
