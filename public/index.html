@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Banking Chatbot</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script defer type="module" src="app.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="chat-header">
+            <div class="header-title">
+                <h1>스마트 뱅킹 AI</h1>
+                <span class="status-dot"></span>
+            </div>
+        </header>
+
+        <main class="chat-content" id="chat-window">
+            <div class="date-divider">
+                <span>오늘</span>
+            </div>            
+        </main>
+
+        <footer class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="user-input" placeholder="메시지를 입력하세요..." autocomplete="off">
+                <button class="send-btn" id="send-btn"><i class="ri-send-plane-fill"></i></button>
+            </div>
+        </footer>
+    </div>
+
+</body>
+</html>
