@@ -51,10 +51,15 @@ const removeTypingIndicator = () => {
     const indicator = document.getElementById('typing-indicator');
     if (indicator) indicator.remove();
 };
+let isSending = false;
 const handleSend = async () => {
+    if(isSending){
+        return;
+    }
     try {
         //let url = "https://jsonplaceholder.typicode.com/todos/1"; // 백엔드 연동 후 설정
         const message = userInput.value.trim(); // 겅벡제거
+        isSending = true;
         if (message.length == 0) return;
         console.log(message);
         // 유저 질문 말풍선
@@ -63,7 +68,7 @@ const handleSend = async () => {
         userInput.value = '';
         console.log("인디케이터 표기");
         showTipingIndicator(); //todo: typing indicator 삽입
-        //await new Promise(resolve => setTimeout(resolve, 1000)); // 강제 대기
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 강제 대기
         const botResponse = await sendMessage('/chat', message);
         console.log(botResponse.replyText);
         // 화면에 추가
@@ -72,6 +77,9 @@ const handleSend = async () => {
     } catch (error) {
         console.error(`오류 발생: ${error}`);
         addBotMessage("오류 발생했습니다.");
+    }
+    finally {
+        isSending = false;
     }
 }
 sendButton.addEventListener('click', handleSend);
