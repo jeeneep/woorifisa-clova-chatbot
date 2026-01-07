@@ -230,7 +230,7 @@ const showTipingIndicator = () => {
 
 3. api.js는 Secret Key를 이용해 요청 서명(Signature)을 생성한 뒤, Chatbot API를 호출하고, 챗봇 응답을 반환
 
-5. server.js는 응답을 파싱하여 챗봇이 생성한 텍스트만 추출한 후 클라이언트에 전달
+4. server.js는 응답을 파싱하여 챗봇이 생성한 텍스트만 추출한 후 클라이언트에 전달
 
 
 <br>
@@ -356,3 +356,72 @@ export async function chatbot(payload) {
 }
 
 ```
+
+<br>
+
+## CLOVA Chatbot 연동 및 개발 상세
+
+### 1. 서비스 아키텍처 및 API Gateway 연동
+**NCP API Gateway**를 관문으로 하는 메시징 파이프라인을 구축
+- **연동 엔드포인트**: CLOVA Chatbot 빌더에서 생성된 고유 `Invoke URL`을 활용하여 외부 애플리케이션과의 통신 인터페이스를 단일화
+- **보안 관문 설정**: API Gateway를 통해 비정상적인 접근을 차단하고, 허가된 `Secret Key`를 가진 서버만 챗봇 엔진과 통신할 수 있도록 보안 레이어를 구성
+
+<br>
+
+### 2. NCP 전용 예외 처리 및 상태 관리
+공식 API 명세에 정의된 상태 코드를 기반으로 에러 핸들링 로직을 구축
+- **타임스탬프 유효성 관리**: NCP 서버의 보안 정책인 `10,000ms(10초)` 허용 범위를 준수하기 위해 `Date.now()`를 활용한 실시간 동기화 처리를 수행(`4032` 에러 방지).
+
+(server.js)
+ 
+ ```javascript
+
+const payload = {
+        "version": "v2",
+        userId,
+        userIp: request.ip || "127.0.0.1",
+        "timestamp": Date.now(),
+        "bubbles": [
+            {
+                "type": "text",
+                "data" : {
+                    "description" : text
+                }
+            }
+        ],
+        "event": "send"
+    };
+
+ ```
+  
+- **응답 상태 대응**: 챗봇 빌더의 배포 상태나 도메인 코드 유효성(`1001`, `1002`) 및 지원되지 않는 프로토콜 버전(`5010`) 등 다양한 서버 응답 상황에 대응하는 예외 처리 구문을 적용
+
+ (api.js)
+ ```javascript
+
+export async function chatbot(payload) {
+    try {
+        // ... (중략) ...
+        const result = await HTTP
+                        .post(CHATBOT_URL) 
+                        .set('Content-Type', 'application/json; charset=UTF-8') 
+                        .set('X-NCP-CHATBOT_SIGNATURE', signature) 
+                        .send(requestBodyString); 
+
+        return result.text;
+    } catch(err) {
+        // 바로 이 부분에서 에러 상태를 관리합니다.
+        console.error("CHATBOT 호출 실패:", err.status, err.response?.text);
+        throw err;
+    }
+}
+
+ ```
+
+<br>
+
+### 3. 금융 지식 베이스(Knowledge Base) 구축 및 학습
+사용자에게 정확한 금융 정보를 제공하기 위해 챗봇 빌더를 활용한 모델 튜닝 진행
+- **데이터셋 설계**: 금융 기초 용어를 구조화하여 챗봇의 지식 베이스를 구축
+- **NLU 모델 최적화**: 자연어 이해(NLU) 성능 향상을 위해 다양한 발화 패턴(유사 질문)을 학습시켜 응답 정확도를 개선
+- **Custom 연동**: `Custom` 채널 설정을 통해 고유 `Secret Key`를 관리하고, 웰컴 메시지(`Open` API) 및 질의응답(`Send` API) 기능을 최종적으로 완성
