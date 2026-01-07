@@ -215,3 +215,144 @@ const showTipingIndicator = () => {
     // 콘텐츠 전체 높이(scrollHeight)를 스크롤 위치(scrollTop)에 대입하여 하단 고정
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
+```
+
+
+<br>
+<br>
+
+## 백엔드 핵심 코드
+
+### 전체 동작 흐름
+1. 클라이언트는 { userId, text } 형태의 JSON을 `/chat` 엔드포인트로 전송
+
+2. server.js는 해당 요청을 Chatbot API가 요구하는 포맷(payload)으로 변환하여 외부 Chatbot API 호출
+
+3. api.js는 Secret Key를 이용해 요청 서명(Signature)을 생성한 뒤, Chatbot API를 호출하고, 챗봇 응답을 반환
+
+5. server.js는 응답을 파싱하여 챗봇이 생성한 텍스트만 추출한 후 클라이언트에 전달
+
+
+<br>
+
+### 1. server.js (클라이언트와 서버 통신)
+
+
+#### API 스펙: `POST /chat`
+- Request Body
+```JSON
+{
+    "userId": "string", 
+    "text": "string" 
+}
+```
+- Response Body
+```JSON
+{
+    "userId": "string", 
+    "replyText": "string"
+}
+```
+
+<br>
+
+#### 핵심 로직
+- 클라이언트 요청(JSON)을 받아 CLOVA 챗봇 API로 전달
+- 챗봇 응답에서 텍스트만 추출해 클라이언트에 반환
+
+```javascript
+app.post('/chat', async(request, response) => {
+    try{
+        // 1. 요청 바디에서 userId, text 추출
+        const {userId, text} = request.body;
+    
+        // 2. CLOVA Chatbot API가 요구하는 payload 생성
+        const payload = {
+            "version": "v2",
+            userId,
+            userIp: request.ip || "127.0.0.1",
+            "timestamp": Date.now(),
+            "bubbles": [ 
+                {
+                    "type": "text",
+                    "data" : { 
+                        "description" : text
+                    } 
+                } 
+            ],
+            "event": "send"
+        };
+    
+        // 3. 외부 API(chatbot) 호출
+        const raw = await chatbot(payload);
+        
+        // 4. 문자열(JSON) 응답을 JS 객체로 변환
+        const result = JSON.parse(raw);
+    
+        // 5. 챗봇 응답 객체에서 text 타입 bubble의 description을 추출
+        const replyText =
+            (result?.bubbles ?? [])
+                .find(b => b?.type === "text")
+                ?.data?.description ?? "";
+    
+    
+        // 6. 응답 데이터 구성
+        const data = {
+            userId: result?.userId ?? userId,
+            replyText: replyText
+        }
+    
+        response.send(data);
+
+    } catch (err) {
+        // ...
+    }
+
+
+});
+```
+
+<br>
+
+### 2. api.js(서버와 챗봇 통신)
+
+- server.js에서 전달받은 payload를 Chatbot API 요청 형식으로 변환
+- 요청 본문을 기반으로 서명(Signature) 생성 후, 서명 헤더를 포함하여 Chatbot API 호출
+- 챗봇 응답을 server.js에 반환
+
+<br>
+
+```javascript
+// .env에서 SECRET_KEY, CHATBOT_URL 가져오기
+const SECRET_KEY = process.env.SECRET_KEY;
+const CHATBOT_URL = process.env.CHATBOT_URL;
+
+
+export async function chatbot(payload) {
+    try{
+        // 1. 요청 바디를 문자열로 변환
+        const requestBodyString = JSON.stringify(payload);
+    
+        // 2. 요청 바디(JSON 문자열)를 Secret Key로 HMAC-SHA256 → Base64 인코딩
+        const signature = crypto
+            .createHmac("sha256", SECRET_KEY)
+            .update(requestBodyString, "utf8")
+            .digest("base64");
+
+        // 3. CLOVA Chatbot API 호출
+        const result = await HTTP
+                        .post(CHATBOT_URL) 
+                        .set('Content-Type', 'application/json; charset=UTF-8') 
+                        .set('X-NCP-CHATBOT_SIGNATURE', signature) 
+                        .send(requestBodyString); 
+    
+        // 4. 응답(JSON 문자열) 반환
+        return result.text;
+
+    } catch(err) {
+        // ...
+    }
+
+}
+
+```
