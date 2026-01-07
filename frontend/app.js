@@ -30,9 +30,9 @@ function addUserMessage(text) {
     chatWindow.append(messageRow);
 }
 
-function addBotMessage(text) {
-    const profileDiv = createEl('div', 'profile-image', 'AI');
-    const messageRow = createEl('div', 'message-row bot');
+async function addBotMessage(text) {
+    const profileDiv = await createEl('div', 'profile-image', 'AI');
+    const messageRow = await createEl('div', 'message-row bot');
     const bubbleGroup = createEl('div', 'bubble-group');
     const bubble = createEl('div', 'bubble', text);
     const timestamp = createEl('span', 'timestamp', getCurrentTime());
@@ -43,7 +43,20 @@ function addBotMessage(text) {
     chatWindow.append(messageRow);
 }
 
-sendButton.addEventListener('click', () => {
+// Enter 키 이벤트 리스너
+// if (userInput) {
+//     userInput.addEventListener('keypress', (event) => {
+//         if (event.key === 'Enter') {
+//             event.preventDefault(); // 줄바꿈 방지
+//             handleSendChat(); // 채팅 전송 함수
+//         }
+//     });
+//     console.log('Enter 키 이벤트 리스너 등록 완료');
+// } else {
+//     console.error('입력창을 찾을 수 없습니다!');
+// }
+
+function handleSend() {
     const message = userInput.value;
 
     if (message.length == 0) return;
@@ -54,10 +67,19 @@ sendButton.addEventListener('click', () => {
     addUserMessage(message);
 
     // 봇 응답 말풍선
-    sendMessage(message);
+    // sendMessage(message);
+
+    addBotMessage(sendMessage(message));
 
     // 입력창 비우기
     userInput.value = ''; 
+}
+
+sendButton.addEventListener('click', handleSend);
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    handleSend();
+  }
 });
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -65,3 +87,4 @@ window.addEventListener('DOMContentLoaded', () => {
     const welcomeMessage = '안녕하세요! 스마트 뱅킹 AI입니다. 무엇을 도와드릴까요?';
     addBotMessage(welcomeMessage, false);
 });
+
