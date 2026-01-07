@@ -46,7 +46,6 @@ const handleSend = async () => {
 
 ```javascript
 // /public/app.js
-
 // Element 생성 헬퍼 함수
 function createEl(tag, className, text) {
     const el = document.createElement(tag);
@@ -80,9 +79,7 @@ function addUserMessage(text) {
 
 ```javascript
 // /public/app.js
-
-// 버튼 클릭
-sendButton.addEventListener('click', handleSend);
+sendButton.addEventListener('click', handleSend); // 버튼 클릭
 
 // 엔터키 입력
 userInput.addEventListener('keydown', (e) => {
@@ -129,8 +126,8 @@ export const sendMessage = async (url, userMessage) => {
 
 ### 3. 중복 전송 방지 (Preventing Duplicate Submissions)
 
-- 비동기 요청이 진행 중일 때(`isSending`)는 추가 실행을 막아, 중복 요청으로 인한 서버 부하 및 UI 오류 방지.
-- `finally` 구문을 통해 통신 종료 후 상태 초기화.
+- 비동기 요청이 진행 중일 때(`isSending`)는 추가 실행을 막아, 중복 요청으로 인한 서버 부하 및 UI 오류 방지
+- `finally` 구문을 통해 통신 종료 후 상태 초기화
 
 ```javascript
 // /public/app.js
@@ -173,7 +170,8 @@ const handleSend = async () => {
 - 챗봇이 답변을 준비하는 동안 '작성 중'임을 알리는 인디케이터 구현
 - 대기 시간 동안 사용자에게 시각적인 피드백을 제공
 
-```javascript// /public/app.js
+```javascript
+// /public/app.js
 let isSending = false;
 
 const handleSend = async () => {
@@ -201,3 +199,19 @@ const handleSend = async () => {
     }
 }
 ```
+
+<br>
+
+### 5. 자동 스크롤 및 포커스 제어
+- Indicator 삽입 시 `scrollTop`을 `scrollHeight`로 설정하여 사용자가 최신 대화 상태를 즉시 확인할 수 있도록 구현
+
+```javascript
+// /public/app.js
+const showTipingIndicator = () => {
+    
+    // ... Indicator 생성 및 추가 로직
+
+    chatWindow.appendChild(indicator); // 채팅 영역의 마지막 자식 노드로 추가
+    // 콘텐츠 전체 높이(scrollHeight)를 스크롤 위치(scrollTop)에 대입하여 하단 고정
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
